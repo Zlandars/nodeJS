@@ -37,15 +37,21 @@ rl.on('line',(input)=>{
             }
         });
     }
-    if(input.split('-').length === 6) {
-        const [ss,mm,HH,DD,MM,YY] = input.split('-').map(i=>+i);
-        const bindTime = moment(`${YY},${MM},${DD},${HH},${mm},${ss}`, 'YY,MM,DD,HH,mm,ss').unix();
+    if(input.split(',').length > 2) {
+        const formatTime = 'YY,MM,DD,HH,mm,ss';
+        const bindTime = moment(input, formatTime);
+        console.log(moment().format(formatTime) + ' now | after ' + bindTime);
         function timer(bindTime){
-            let diffTime = bindTime - moment().unix();
-            let duration = moment.duration(diffTime*1000, 'milliseconds').asMilliseconds();
+            let diffTime = bindTime - moment();
+            let duration = moment.duration(diffTime, 'milliseconds').asMilliseconds();
             const interval = setInterval(()=>{
                 duration = moment.duration(duration - 1000, 'milliseconds');
-                console.log(duration.format('s-m-h-d-M-y'))
+                console.clear();
+                console.log(duration.format(formatTime))
+                console.log(duration.seconds()<0)
+                if (duration.seconds() < 0) {
+                    clearInterval(interval);
+                }
             }, 1000);
             arrIntervals.push(interval);
         }
