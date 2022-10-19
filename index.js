@@ -3,6 +3,7 @@ import { stdin as input, stdout as output } from 'node:process';
 // import colors from "colors";
 import moment from "moment";
 import 'moment-duration-format';
+import 'moment-precise-range-plugin'
 import { EventEmitter } from 'node:events';
 
 
@@ -12,23 +13,26 @@ rl.on('line',(input)=>{
     const formatTime = 'YY,MM,DD,HH,mm,ss';
     const emitter = new EventEmitter();
 
-    const timeLost = (inputTime) => {
-        if (moment(inputTime) - moment.now()) {
+    const timerRemaining = (input) => {
+        const inputTime = moment(input, formatTime);
+        const timeNow = new Date();
+        if ((inputTime - moment.now()) < 0) {
             emitter.emit('timerEnd')
         }
         console.clear()
-        console.log(inputTime.subtract(1,'seconds'));
+        console.log(moment(timeNow, formatTime).preciseDiff(inputTime));
     }
-    timeLost(moment(input,formatTime));
-    // const showTimer = () => {
-    //     const timeNow = moment.now();
-    //     console.log(timeNow + ' ' + inputTime);
-    // }
-    // showTimer()
-    // const interval = setInterval(()=>{
-    //     emitter.emit('tick',inputTime)
-    // },1000)
-    // emitter.on('tick',)
+    const timerEnd = (idInterval) => {
+        clearInterval(idInterval);
+        console.log('timer is done')
+    };
+    const timerId = setInterval(()=>{
+        emitter.emit('timerTick',input)
+    }, 1000)
+    emitter.on('timerTick', timerRemaining)
+    emitter.on('timerEnd',()=>{
+        timerEnd(timerId);
+    })
 })
 
 
