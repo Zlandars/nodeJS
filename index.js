@@ -1,41 +1,63 @@
-import * as readline from 'node:readline/promises';
-import { stdin as input, stdout as output } from 'node:process';
+import fs from 'fs';
+
+const path = './storage/access.log';
+function randomizer(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min) + min);
+}
+const stringGenerator = () => {
+	const ip = `${randomizer(1,254)}.${randomizer(1,254)}.${randomizer(1,254)}.${randomizer(1,254)}`;
+	const date = new Date(randomizer(1,Date.now()));
+	const query = ['POST','GET'];
+	const serverAnswer = ['200','404','500'];
+	return `${ip} - - [${date} -0300] "${query[randomizer(0,query.length)]} /boo HTTP/1.1" ${serverAnswer[randomizer(0,serverAnswer.length)]} 0 "-" "curl/7.47.0"\n`;
+};
+while (fs.statSync(path).size < 104857600) {
+	console.clear()
+	console.log(Math.round(fs.statSync(path).size/(1024*1024)))
+	fs.writeFileSync(path,stringGenerator(),{flag: 'a', encoding:'utf-8'})
+	// fs.writeFile(path,stringGenerator(),{flag: 'a', encoding:'utf-8'}, (err)=>console.log(err))
+}
+
+// import * as readline from 'node:readline/promises';
+// import { stdin as input, stdout as output } from 'node:process';
 // import colors from "colors";
-import moment from "moment";
-import 'moment-duration-format';
-import 'moment-precise-range-plugin'
-import { EventEmitter } from 'node:events';
+
+// import 'moment-duration-format';
+// import 'moment-precise-range-plugin'
+// import { EventEmitter } from 'node:events';
 
 
 
-const rl = readline.createInterface({ input, output });
-rl.on('line',(input)=>{
-    const formatTime = 'YY,MM,DD,HH,mm,ss';
-    const emitter = new EventEmitter();
 
-    const timerRemaining = (input) => {
-        const inputTime = moment(input, formatTime);
-        const timeNow = new Date();
-        if ((inputTime - moment.now()) < 0) {
-            emitter.emit('timerEnd')
-        }
-        console.clear()
-        console.log(moment(timeNow, formatTime).preciseDiff(inputTime));
-    }
-    const timerEnd = (idInterval) => {
-        clearInterval(idInterval);
-        console.log('timer is done')
-    };
-    const timerId = setInterval(()=>{
-        emitter.emit('timerTick',input)
-    }, 1000)
-    emitter.on('timerTick', timerRemaining)
-    emitter.on('timerEnd',()=>{
-        timerEnd(timerId);
-    })
-})
-
-
+// Домашнее задание 1 урока на событиях
+// const rl = readline.createInterface({ input, output });
+// rl.on('line',(input)=>{
+//     const formatTime = 'YY,MM,DD,HH,mm,ss';
+//     const emitter = new EventEmitter();
+//
+//     const timerRemaining = (input) => {
+//         const inputTime = moment(input, formatTime);
+//         const timeNow = new Date();
+//         if ((inputTime - moment.now()) < 0) {
+//             emitter.emit('timerEnd')
+//         }
+//         console.clear()
+//         console.log(moment(timeNow, formatTime).preciseDiff(inputTime));
+//     }
+//     const timerEnd = (idInterval) => {
+//         clearInterval(idInterval);
+//         console.log('timer is done')
+//     };
+//     const timerId = setInterval(()=>{
+//         emitter.emit('timerTick',input)
+//     }, 1000)
+//     emitter.on('timerTick', timerRemaining)
+//     emitter.on('timerEnd',()=>{
+//         timerEnd(timerId);
+//     })
+// })
 // let arrIntervals = [];
 // let arr = [];
 // const rl = readline.createInterface({ input, output });
