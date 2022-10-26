@@ -1,66 +1,77 @@
 import fs from 'fs';
 import {Transform} from 'stream';
 
+
 const path = './storage/access.log';
 
 // Генератор жирного лога Задание 1
 //
-// function randomizer(min, max) {
-// 	min = Math.ceil(min);
-// 	max = Math.floor(max);
-// 	return Math.floor(Math.random() * (max - min) + min);
-// }
+function randomizer(min, max) {
+	min = Math.ceil(min);
+	max = Math.floor(max);
+	return Math.floor(Math.random() * (max - min) + min);
+}
+
 // Генератор строки лога
-// const stringGenerator = () => {
-// 	const ip = `${randomizer(1,254)}.${randomizer(1,254)}.${randomizer(1,254)}.${randomizer(1,254)}`;
-// 	const date = new Date(randomizer(1,Date.now()));
-// 	const query = ['POST','GET'];
-// 	const serverAnswer = ['200','404','500'];
-// 	return `${ip} - - [${date} -0300] "${query[randomizer(0,query.length)]} /boo HTTP/1.1" ${serverAnswer[randomizer(0,serverAnswer.length)]} 0 "-" "curl/7.47.0"\n`;
-// };
+const stringGenerator = () => {
+	const ip = `${randomizer(1, 254)}.${randomizer(1, 254)}.${randomizer(1, 254)}.${randomizer(1, 254)}`;
+	const date = new Date(randomizer(1, Date.now()));
+	const query = ['POST', 'GET'];
+	const serverAnswer = ['200', '404', '500'];
+	return `${ip} - - [${date} -0300] "${query[randomizer(0, query.length)]} /boo HTTP/1.1"
+${serverAnswer[randomizer(0, serverAnswer.length)]} 0 "-" "curl/7.47.0"\n`;
+};
 // let arrMass = [];
-// Геренатор массива строк (искусственное разбиение на части (Не уверен что такое вообще нужно использовать, думал сократит операции использования жесткого диска))
-// function pushArray () {
+
+//Геренатор массива строк (искусственное разбиение на части (Не уверен что такое вообще нужно использовать, думал
+// сократит операции использования жесткого диска))
+// function pushArray() {
 // 	arrMass = [];
 // 	while (arrMass.length <= 1000) {
 // 		arrMass.push(stringGenerator());
 // 	}
 // 	return arrMass;
 // }
-//	Проверка на существование файла лога.
-// exists(path,(e)=>{
-// 	const writeStream = fs.createWriteStream(path,{flags:'a+',encoding:'utf8'});
-// 		while (fs.statSync(path).size < 104857600) {
-// 			console.clear();
-// 			// console.log(Math.round(fs.statSync(path).size));
-// 			// pushArray();
-// 			// writeStream.write(stringGenerator()+'');
-// 			// Без стрима
-// 			// fs.writeFileSync(path,stringGenerator(),{flag: 'a', encoding:'utf-8'})
-// 			// Решил сделать синхронно, чтобы виден был процесс
-// 			// fs.writeFile(path,stringGenerator(),{flag: 'a', encoding:'utf-8'}, (err)=>console.log(err))
-// 		}
-// 	writeStream.end(() => console.log('File writing finished'));
-// })
+
+// Проверка на существование файла лога
+fs.exists(path, () => {
+	const writeStream = fs.createWriteStream(path, {flags: 'a+', encoding: 'utf8'});
+	while (fs.statSync(path).size < 104857600) {
+		console.clear(); // console.log(Math.round(fs.statSync(path).size)); // pushArray(); //
+		writeStream.write(stringGenerator() + '');
+		// Без стрима //
+		fs.writeFileSync(path, stringGenerator(), {
+				flag: 'a',
+				encoding: 'utf-8'
+			}
+		)
+// Решил сделать синхронно, чтобы виден был процесс
+	fs.writeFile(path, stringGenerator(), {flag: 'a', encoding: 'utf-8'}, (err) => console.log(err))
+	}
+	writeStream.end(() => console.log('File writing finished'));
+})
 
 // Задание 2
-const ip = '240.85.195.60';
-const readStream = fs.createReadStream(path, 'utf8');
-const writeStream = fs.createWriteStream(`./storage/filtered_${ip}.log`,{flags:'a+',encoding:'utf8'});
-const tStream = new Transform({
-	transform(chunk, encoding, callback) {
-		const regExp = new RegExp(ip, 'g');
-		if (regExp.test(chunk.toString())) {
-			const arr = `${chunk.toString().split('\n').filter((el)=>{
-				return regExp.test(el);
-			}).join('')} \n`
-			this.push(arr)
+const arrIp = ['240.85.195.60', '160.13.46.6'];
+arrIp.map(ip => {
+	const readStream = fs.createReadStream(path, 'utf8');
+	const writeStream = fs.createWriteStream(`./storage/filtered_${ip}.log`, {flags: 'a+', encoding: 'utf8'});
+	const tStream = new Transform({
+		transform(chunk, encoding, callback) {
+			const regExp = new RegExp(ip, 'g');
+			if (regExp.test(chunk.toString())) {
+				const arr = `${chunk.toString().split('\n').filter((el) => {
+					return regExp.test(el);
+				}).join('')} \n`
+				this.push(arr)
+			}
+			callback();
 		}
-		callback();
-	}
+	})
+	readStream.pipe(tStream).pipe(writeStream)
+	readStream.on('end', () => console.log('File reading finished!'));
 })
-readStream.pipe(tStream).pipe(writeStream)
-readStream.on('end',()=>console.log('File reading finished!'));
+
 
 // readStream.on('data',(chunk)=>{
 // 	console.log('Chunk');
@@ -112,54 +123,54 @@ readStream.on('end',()=>console.log('File reading finished!'));
 //     if(input === 'exit') {
 //         rl.close();
 //     }
-    // if(input.split(',').length === 2) {
-    //     const [int1,int2] = input.split(',').sort().map(i=> +i);
-    //     nextPrime:
-    //             for (let i = int1; i <= int2; i++) { // Для всех i...
-    //                 for (let j = 2; j < i; j++) { // проверить, делится ли число..
-    //                     if (i % j === 0) continue nextPrime; // не подходит, берём следующее
-    //                 }
-    //                 arr.push(i)
-    //             }
-    //     if (arr.length === 0) {
-    //         console.log('В указанном диапазоне нет чисел! Попробуйте ввести диапазон снова')
-    //     }
-    //     arr.forEach((item) => {
-    //         if (state === 'green') {
-    //             console.log(colors.green(item));
-    //             state = 'yellow'
-    //         } else if (state === 'yellow') {
-    //             console.log(colors.yellow(item));
-    //             state = 'red'
-    //         } else {
-    //             console.log(colors.red(item));
-    //             state = 'green'
-    //         }
-    //     });
-    // }
-    // Таймер без событий
-    // if(input.split(',').length > 2) {
-    //     const formatTime = 'YY,MM,DD,HH,mm,ss';
-    //     const bindTime = moment(input, formatTime);
-    //     console.log(moment().format(formatTime) + ' now | after ' + bindTime);
-    //     function timer(bindTime){
-    //         let diffTime = bindTime - moment();
-    //         let duration = moment.duration(diffTime, 'milliseconds').asMilliseconds();
-    //         const interval = setInterval(()=>{
-    //             duration = moment.duration(duration - 1000, 'milliseconds');
-    //             console.clear();
-    //             console.log(duration.format(formatTime))
-    //             if (duration.seconds() < 0) {
-    //                 clearInterval(interval);
-    //             }
-    //         }, 1000);
-    //         arrIntervals.push(interval);
-    //     }
-    //     timer(bindTime);
-    // }
-    // if(input === 'clearIntervals') {
-    //     arrIntervals.map(i=>{
-    //         clearInterval(i)
-    //     })
-    // }
+// if(input.split(',').length === 2) {
+//     const [int1,int2] = input.split(',').sort().map(i=> +i);
+//     nextPrime:
+//             for (let i = int1; i <= int2; i++) { // Для всех i...
+//                 for (let j = 2; j < i; j++) { // проверить, делится ли число..
+//                     if (i % j === 0) continue nextPrime; // не подходит, берём следующее
+//                 }
+//                 arr.push(i)
+//             }
+//     if (arr.length === 0) {
+//         console.log('В указанном диапазоне нет чисел! Попробуйте ввести диапазон снова')
+//     }
+//     arr.forEach((item) => {
+//         if (state === 'green') {
+//             console.log(colors.green(item));
+//             state = 'yellow'
+//         } else if (state === 'yellow') {
+//             console.log(colors.yellow(item));
+//             state = 'red'
+//         } else {
+//             console.log(colors.red(item));
+//             state = 'green'
+//         }
+//     });
+// }
+// Таймер без событий
+// if(input.split(',').length > 2) {
+//     const formatTime = 'YY,MM,DD,HH,mm,ss';
+//     const bindTime = moment(input, formatTime);
+//     console.log(moment().format(formatTime) + ' now | after ' + bindTime);
+//     function timer(bindTime){
+//         let diffTime = bindTime - moment();
+//         let duration = moment.duration(diffTime, 'milliseconds').asMilliseconds();
+//         const interval = setInterval(()=>{
+//             duration = moment.duration(duration - 1000, 'milliseconds');
+//             console.clear();
+//             console.log(duration.format(formatTime))
+//             if (duration.seconds() < 0) {
+//                 clearInterval(interval);
+//             }
+//         }, 1000);
+//         arrIntervals.push(interval);
+//     }
+//     timer(bindTime);
+// }
+// if(input === 'clearIntervals') {
+//     arrIntervals.map(i=>{
+//         clearInterval(i)
+//     })
+// }
 // });
