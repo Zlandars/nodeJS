@@ -3,10 +3,8 @@ import * as path from "path";
 import {dirname} from 'path';
 import {fileURLToPath} from 'url';
 import fs from "fs";
-import os from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
 const app = express();
 
 //Middleware
@@ -26,59 +24,65 @@ app.use((req, res, next) =>{
 })
 // EndMiddleware
 let currentDir = __dirname;
+
+const checkDir = (filePath) => {
+	return fs.lstatSync(filePath).isDirectory();
+}
+
+
 app.get('/', function (req, res) {
-
-	const inq = async () => {
+	(async () => {
 		const list = await fs.readdirSync(currentDir);
-		list.unshift('./')
-		const iteration = await inquirer.prompt([
-			{
-				name: 'file',
-				type: 'list',
-				message: 'Choose: ',
-				choices: list
-	
-			}
-		]).then(answer => answer)
-		if (iteration.file === './') {
-			currentDir = currentDir.split('\\').slice(0, -1).join('\\');
-			return await inq()
-		}
-		if (checkDir(iteration.file)) {
-			const arr = currentDir.split('\\');
-			arr.push(iteration.file);
-			currentDir = arr.join('\\');
-			return await inq();
-		} else {
-			const readStream = fs.createReadStream(path.join(currentDir, iteration.file), 'utf8');
-			const writeStream = fs.createWriteStream(path.join(__dirname, `./storage/filtered_${options.f}.log`), {
-				flags: 'a+',
-				encoding: 'utf8'
-			});
-			const tStream = await new Transform({
-				transform(chunk, encoding, callback) {
-					console.log(chunk.toString())
-					const regExp = new RegExp(options.f, 'g');
-					if (regExp.test(chunk.toString())) {
-						const arr = `${chunk.toString().split('\n').filter((el) => {
-							return regExp.test(el);
-						}).join('')} \n`
-						this.push(arr)
-					}
-					callback();
-				}
-			})
-			readStream.pipe(tStream).pipe(writeStream)
-			readStream.on('end', () => inq());
-		}
-	}
-	inq();
+		res.send(`<body>
+			<div style="display: flex; flex-direction:column;">
+			${list.map((item,index)=>{
+				return `<a href='/${item}'><button id="${index}">${item}</button></a>`
+			}).join('')}
+			</div>
+		</body>`);
+	})();
 
-	res.send('<h1>HELLO world!</h1>');
 })
-
 app.get('*', function (req, res) {
-	res.redirect('/')
+	if(req.url === '/favicon.ico') return;
+	const newPath = path.join(currentDir, req.url.split('/').filter(function (el) {
+		return (el != null && el != "" || el === 0);
+	}).join('/'));
+	(async () => {
+		if(!checkDir(newPath)) {
+			const readStream = await fs.createReadStream(newPath, 'utf8');
+			await readStream.on('data',(chunk)=>{
+				let arrPath = req.url.split('/').filter(function (el) {
+								return (el != null && el != "" || el === 0);
+							});
+				return res.send(`
+					<body>
+						<div style="display: flex; flex-direction:column;">
+							<a href='${arrPath.length > 1 ? '/' : ''}${arrPath.slice(0,arrPath.length - 1).join('/')}/'><button>Back</button></a>
+						</div>
+						<p>${chunk}</p>
+					</body>
+			`);
+			});
+			readStream.on('end',()=>console.log('Read stream end'));
+		} else {
+			const list = await fs.readdirSync(newPath);
+			let arrPath = req.url.split('/').filter(function (el) {
+				return (el != null && el != "" || el === 0);
+			});
+			res.send(`<body>
+				<div style="display: flex; flex-direction:column;">
+				<a href='${arrPath.length > 1 ? '/' : ''}${arrPath.slice(0,arrPath.length - 1).join('/')}/'><button>Back</button></a>
+					${list.map((item,index)=>{
+						console.log(item)
+						return `<a href='/${req.url.split('/').filter(function (el) {
+							return (el != null && el != "" || el === 0);
+						}).join('/')}/${item}'><button id="${index}">${item}</button></a>`
+					}).join('')}
+				</div>
+			</body>`);
+		}
+	})();
 })
 app.listen(3000, () => {
 	console.log('Hello from 3000')
