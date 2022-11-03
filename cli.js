@@ -78,7 +78,6 @@ const inq = async () => {
 		currentDir = arr.join('\\');
 		return await inq();
 	} else {
-
 		const readStream = fs.createReadStream(path.join(currentDir, iteration.file), 'utf8');
 		const writeStream = fs.createWriteStream(path.join(__dirname, `./storage/filtered_${options.f}.log`), {
 			flags: 'a+',
@@ -99,7 +98,6 @@ const inq = async () => {
 		})
 		readStream.pipe(tStream).pipe(writeStream)
 		readStream.on('end', () => inq());
-
 	}
 }
 inq();
