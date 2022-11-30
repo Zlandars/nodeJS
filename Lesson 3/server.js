@@ -1,29 +1,40 @@
 import express from 'express';
 import * as path from "path";
-import {dirname} from 'path';
-import {fileURLToPath} from 'url';
 import fs from "fs";
+import _yargs from 'yargs';
+import {hideBin} from 'yargs/helpers';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const yargs = _yargs(hideBin(process.argv));
+
+const options = yargs.usage('Usage -p ')
+    .options({
+	'p': {
+	    alias: 'path',
+	    describe: 'Path to folder',
+	    type: 'string',
+	    demandOption: false,
+	}
+    }).argv;
+
 const app = express();
 
 //Middleware
-app.use('/storage', express.static('storage'))
-app.use((req, res, next) =>{
-	const stringGenerator = () => {
-		const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-		const date = new Date().toISOString();
-		const query = req.method;
-		const serverAnswer = res.statusCode;
-		return `${ip} - - [${date} -0300] "${query} /boo HTTP/1.1" ${serverAnswer} 0 "-" "curl/7.47.0"\n`;
-	};
-	fs.exists(path, () => {
-		fs.writeFile('./storage/access2.log', stringGenerator(), {flag: 'a+', encoding: 'utf-8'}, (err) => err)
-	})
-	next()
-})
+// app.use('/storage', express.static('storage'))
+// app.use((req, res, next) =>{
+// 	const stringGenerator = () => {
+// 		const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+// 		const date = new Date().toISOString();
+// 		const query = req.method;
+// 		const serverAnswer = res.statusCode;
+// 		return `${ip} - - [${date} -0300] "${query} /boo HTTP/1.1" ${serverAnswer} 0 "-" "curl/7.47.0"\n`;
+// 	};
+// 	fs.exists(path, () => {
+// 		fs.writeFile('./storage/access.log', stringGenerator(), {flag: 'a', encoding: 'utf-8'}, (err) => err)
+// 	})
+// 	next()
+// })
 // EndMiddleware
-let currentDir = __dirname;
+let currentDir = options.path ? options.path : process.cwd();
 
 const checkDir = (filePath) => {
 	return fs.lstatSync(filePath).isDirectory();
@@ -32,7 +43,7 @@ const checkDir = (filePath) => {
 
 app.get('/', function (req, res) {
 	(async () => {
-		const list = await fs.readdirSync(currentDir);
+		const list = fs.readdirSync(currentDir);
 		res.send(`<body>
 			<div style="display: flex; flex-direction:column;">
 			${list.map((item,index)=>{
@@ -66,7 +77,7 @@ app.get('*', function (req, res) {
 			});
 			readStream.on('end',()=>console.log('Read stream end'));
 		} else {
-			const list = await fs.readdirSync(newPath);
+			const list = fs.readdirSync(newPath);
 			let arrPath = req.url.split('/').filter(function (el) {
 				return (el != null && el != "" || el === 0);
 			});
