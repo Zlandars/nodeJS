@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script src = "https://cdn.socket.io/3.1.3/socket.io.min.js" integrity = "sha384-cPwlPLvBTa3sKAgddT6krw0cJat7egBga3DJepJyrLl4Q9/5WLra3rrnMcyTyOnh" crossOrigin = "anonymous"></script>
+</head>
+<body>
+    <input class='name' type="text" placeholder="Enter your NAME" />
+    <input class="save_btn" type="button" value="Save my name"/>
+    <br>
+    <input class="message" type="text" placeholder="Enter your message"/>
+    <input class="send_btn" type="button" value="Send button"/>
+    <br />
+    <div class="messages">
+
+    </div>
+</body>
+<script>
+    const socket = io('localhost:3000');
+    const name = document.querySelector('.name');
+    const saveBtn = document.querySelector('.save_btn');
+    const message = document.querySelector('.message');
+    const sendBtn = document.querySelector('.send_btn')
+    const messages = document.querySelector('.messages');
+    (()=>{
+	    localStorage.getItem('name') ? name.value = localStorage.getItem('name') : '';
+	    socket.on('firstLoad', (data)=>{
+	        data.map(item => {
+		        messages.innerHTML += `<p>${item.name}: ${item.msg}</p>`
+            })
+        })
+    })()
+    saveBtn.onclick = () => {
+	    if(name.value) {
+		    name.classList.remove('error')
+		    return localStorage.setItem('name', name.value)
+	    }
+    }
+    socket.on('connect',()=>{
+	    console.log(`Connection with localhost:3000 created!`)
+    });
+    socket.on('server_msg',(msg)=>{
+	    messages.innerHTML += `<p>${msg.name}: ${msg.msg}</p>`
+    })
+
+    sendBtn.onclick = () => {
+	    if(localStorage.getItem('name')) {
+	        socket.emit('client_msg', {
+		        name: localStorage.getItem('name'),
+                msg: message.value,
+            })
+            return message.value = '';
+	    }
+	    name.classList.add('error')
+    }
+</script>
+</html>
