@@ -20,9 +20,24 @@ const httpServer = createServer((req, res)=>{
 });
 const io = new Server(httpServer);
 let messages = [];
+let statistic = {};
 io.on("connect", (socket) => {
-    console.log('Socket is emitted')
-    socket.emit('firstLoad',messages)
+    console.log('Socket is emitted', statistic)
+    let status_msg = `Подключился клиент с ip адреса: ${socket.conn.remoteAddress}`
+    socket.broadcast.emit('client_status',status_msg, () => {
+        if(statistic[`${socket.conn.remoteAddress}`]) {
+            statistic[`${socket.conn.remoteAddress}`] = `Переподключился клиент с ip адреса: ${socket.conn.remoteAddress}`;
+        } else {
+            statistic[`${socket.conn.remoteAddress}`] = `Подключился клиент с ip адреса: ${socket.conn.remoteAddress}`;
+        }
+
+    })
+    socket.emit('firstLoad', {messages,statistic});
+    socket.on('disconnect', ()=>{
+        console.log('Socket is disconnect')
+        statistic[`${socket.conn.remoteAddress}`] = `Отключился клиент с ip адреса: ${socket.conn.remoteAddress}`;
+    })
+
     socket.on('client_msg', data => {
         socket.broadcast.emit('server_msg', {
             name: data.name,
