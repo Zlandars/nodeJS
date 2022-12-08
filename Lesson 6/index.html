@@ -43,8 +43,11 @@
     (() => {
         localStorage.getItem('name') ? name.value = localStorage.getItem('name') : '';
     })()
-    socket.on('client_status', (data)=>{
-	    connection.append(data)
+    socket.on('client_connected', (data)=>{
+	    connection.innerHTML = `
+            <p>${data[0]}</p>
+            <h4>Создано соединение с ${data[1]} клиентами!</h4>
+        `;
     })
     socket.once('firstLoad', data => {
 	console.log(data)
